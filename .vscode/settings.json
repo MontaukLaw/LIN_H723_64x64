@@ -1,0 +1,14 @@
+{
+    "files.associations": {
+        "*.cjson": "jsonc",
+        "*.wxss": "css",
+        "*.wxs": "javascript",
+        "sys.h": "c",
+        "user_comm.h": "c",
+        "dma.h": "c",
+        "sys_dma.h": "c",
+        "sys_mpu.h": "c",
+        "usart.h": "c",
+        "adc.h": "c"
+    }
+}
