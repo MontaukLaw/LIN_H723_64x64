@@ -106,6 +106,8 @@ int main(void)
     /* USER CODE BEGIN 2 */
     delay_init(550); // Initialize delay with a clock of 216 MHz
 
+    init_frame_tail();
+    // static uint16_t counter = 0;
     // usart_init(120, 115200);
     // mpu_memory_protection();
 
@@ -119,9 +121,12 @@ int main(void)
 
         main_task();
 
+        // main_task_only_ch0();
+
         // TEST_PORT_UP;
         // TEST_PORT_DOWN;
-        // counter++;
+
+        //  counter++;
         // delay_ms(1000);
         // dma_enable(DMA2_Stream7, 20);
         // while (1)

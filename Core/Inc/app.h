@@ -3,5 +3,8 @@
 
 void main_task(void);
 
+void main_task_only_ch0(void);
+
+void init_frame_tail(void);
 
 #endif 

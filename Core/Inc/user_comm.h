@@ -10,6 +10,7 @@
 #include "usart.h"
 
 #include "adc.h"
+#include "main.h"
 
 typedef struct
 {
@@ -19,10 +20,15 @@ typedef struct
 
 #define CH_DEF(n) {CH##n##_GPIO_Port, CH##n##_Pin}
 #define INPUT_CH_NUMBER 64
+#define ADC_CHANNEL_NUMBER 64
 
 
-#define TOTAL_POINTS (64 * 64)
+#define TOTAL_POINTS (INPUT_CH_NUMBER * ADC_CHANNEL_NUMBER)
 #define ADC_BUFFER_SIZE 10
+
+#define FRAME_TAIL_LEN 4
+
+#define FRAME_LEN (TOTAL_POINTS + FRAME_TAIL_LEN)
 
 #define TEST_PORT_UP TEST_PORT_GPIO_Port->BSRR = TEST_PORT_Pin; // Set GPIO pin PB0 high
 #define TEST_PORT_DOWN TEST_PORT_GPIO_Port->BSRR |= TEST_PORT_Pin << 16;

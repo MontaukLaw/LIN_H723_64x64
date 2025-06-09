@@ -9,6 +9,7 @@
         "sys_dma.h": "c",
         "sys_mpu.h": "c",
         "usart.h": "c",
-        "adc.h": "c"
+        "adc.h": "c",
+        "main.h": "c"
     }
 }
