@@ -26,7 +26,7 @@ void init_frame_tail(void)
 {
 
     // 初始化帧尾
-    points_data[TOTAL_POINTS] = 0xAA; // 帧尾第一个字节
+    points_data[TOTAL_POINTS] = 0xAA;     // 帧尾第一个字节
     points_data[TOTAL_POINTS + 1] = 0x55; // 帧尾第二个字节
     points_data[TOTAL_POINTS + 2] = 0x03; // 帧尾第三个字节
     points_data[TOTAL_POINTS + 3] = 0x99; // 帧尾第四个字节
@@ -62,7 +62,7 @@ static void set_adc_ch(void)
 {
     close_all_adc_ch();
 
-    uint16_t adc_ch_idx = adc_ch % 4;
+    uint16_t adc_ch_idx = adc_ch % 16;
 
     if (adc_ch < 16)
     {
@@ -125,29 +125,45 @@ static void change_adc_ch(void)
 static void turn_on_input_ch(void)
 {
 
-    static uint16_t last_ch = 0;
+    // static uint16_t last_ch = 0;
 
     // 关闭上一个通道
-    set_channel_pin(last_ch, GPIO_PIN_RESET);
+    // set_channel_pin(last_ch, GPIO_PIN_RESET);
 
     // 打开下一个通道
     set_channel_pin(input_ch, GPIO_PIN_SET);
 
-    last_ch = input_ch;
+    // last_ch = input_ch;
+}
+
+void main_task_update(void)
+{
+    static uint8_t test_counter = 0;
+
+    memset(points_data, 0, TOTAL_POINTS);
+    test_counter++;
+    points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
+    HAL_UART_Transmit_DMA(&huart1, points_data, FRAME_LEN); // 发送点数据
+    // uart_busy = 1;
+    // HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
+
+    delay_ms(100);
 }
 
 // 切换数据索引
 static void change_point_idx(void)
 {
     point_idx++;
+    static uint8_t test_counter = 0;
     if (point_idx >= TOTAL_POINTS)
     {
-
+        test_counter++;
+        points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
         HAL_UART_Transmit_DMA(&huart1, points_data, FRAME_LEN); // 发送点数据
         uart_busy = 1;
         HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
 
-        delay_ms(1000);
+        delay_ms(100);
 
         point_idx = 0;
     }
@@ -200,6 +216,19 @@ void adc_data_handler(void)
 //     ready_to_send_data = 0;
 // }
 
+void main_task_adc(void)
+{
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    {
+        // 启动DMA失败
+        Error_Handler();
+    }
+
+    adc_busy = 1;
+    while (adc_busy)
+        ;
+}
+
 void main_task(void)
 {
 
@@ -207,9 +236,11 @@ void main_task(void)
     {
         return;
     }
-
+    
+    set_channel_pin(input_ch, GPIO_PIN_SET);
+    
     // 切换输入通道
-    turn_on_input_ch();
+    // turn_on_input_ch();
 
     if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
     {
@@ -220,6 +251,9 @@ void main_task(void)
     adc_busy = 1;
     while (adc_busy)
         ;
+
+    // 关闭Input
+    set_channel_pin(input_ch, GPIO_PIN_RESET);
 
     // HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
 
@@ -265,6 +299,13 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
     }
 }
 
+void main_task_single_ch(void)
+{
+
+    // 打开下一个通道
+    set_channel_pin(input_ch, GPIO_PIN_SET);
+}
+
 void main_task_only_ch0(void)
 {
     uint8_t ch = 2;
@@ -279,7 +320,16 @@ void main_task_only_ch0(void)
 
     HAL_GPIO_WritePin(CH6_GPIO_Port, CH6_Pin, GPIO_PIN_SET);
 
-    delay_us(1);
+    if (HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_dma_buffer, ADC_BUFFER_SIZE) != HAL_OK)
+    {
+        // 启动DMA失败
+        Error_Handler();
+    }
+
+    adc_busy = 1;
+    while (adc_busy)
+        ;
+    // delay_us(1);
 
     // 设置第一个HC4067开关的通道
     // HC4067_S0_1_GPIO_Port
@@ -287,5 +337,23 @@ void main_task_only_ch0(void)
     HAL_GPIO_WritePin(HC4067_EN_1_GPIO_Port, HC4067_EN_1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(CH6_GPIO_Port, CH6_Pin, GPIO_PIN_RESET);
 
-    delay_us(1); // 延时10us
+    // 简单计算平均值
+    uint32_t adc_sum = 0;
+    for (uint32_t i = 0; i < ADC_BUFFER_SIZE; i++)
+    {
+        adc_sum += adc_dma_buffer[i];
+    }
+
+    memset(points_data, 0, TOTAL_POINTS);
+    // tx_buf[0] = adc_sum / ADC_BUFFER_SIZE; // 计算平均值
+    points_data[0] = adc_sum / ADC_BUFFER_SIZE;
+
+    // static uint8_t test_counter = 0;
+
+    // test_counter++;
+    // points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
+    HAL_UART_Transmit_DMA(&huart1, points_data, FRAME_LEN); // 发送点数据
+
+    delay_ms(100); // 延时100ms
+    delay_us(1);   // 延时10us
 }

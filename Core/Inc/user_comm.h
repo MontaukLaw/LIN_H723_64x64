@@ -11,6 +11,7 @@
 
 #include "adc.h"
 #include "main.h"
+#include <string.h>
 
 typedef struct
 {
