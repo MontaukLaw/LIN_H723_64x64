@@ -157,13 +157,16 @@ static void change_point_idx(void)
     static uint8_t test_counter = 0;
     if (point_idx >= TOTAL_POINTS)
     {
-        test_counter++;
-        points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
+        // test_counter++;
+        // points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
         HAL_UART_Transmit_DMA(&huart1, points_data, FRAME_LEN); // 发送点数据
         uart_busy = 1;
-        HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
+        
+        // CDC_Transmit_HS(points_data, FRAME_LEN);
+        // HAL_GPIO_TogglePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin); // 切换测试端口
+        // HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
 
-        delay_ms(100);
+        // delay_ms(10);
 
         point_idx = 0;
     }
@@ -291,9 +294,9 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
     if (huart->Instance == USART1)
     {
-        // HAL_GPIO_TogglePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin);
+        HAL_GPIO_TogglePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin);
 
-        HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_RESET);
+        // HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_RESET);
 
         uart_busy = 0; // UART发送完成
     }

@@ -8,7 +8,7 @@
 #include "./SYSTEM/usart/sys_usart.h"
 #include "app.h"
 #include "usart.h"
-
+#include "usbd_cdc_if.h"
 #include "adc.h"
 #include "main.h"
 #include <string.h>

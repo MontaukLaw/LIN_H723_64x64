@@ -270,7 +270,7 @@ void MPU_Config(void)
 
 /* MPU Configuration */
 
-void MPU_Config(void)
+void MPU_Config_(void)
 {
     MPU_Region_InitTypeDef MPU_InitStruct = {0};
 
