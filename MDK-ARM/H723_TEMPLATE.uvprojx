@@ -400,6 +400,11 @@
               <FilePath>..\Core\Src\app.c</FilePath>
             </File>
             <File>
+              <FileName>app_com.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\app_com.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>

@@ -9,8 +9,10 @@ volatile uint8_t points_data[FRAME_LEN] = {0};
 __attribute__((section("dma_buffer"), aligned(32))) // uint8_t adc_dma_buffer[1000] = {0};
 uint8_t adc_dma_buffer[ADC_BUFFER_SIZE] = {0};      // 现在大小是以 word 为单位
 
-volatile uint8_t counter = 0;
+uint8_t tx_data[FRAME_LEN] = {0};
 
+
+volatile uint8_t counter = 0;
 volatile uint8_t adc_val = 0;
 // volatile uint8_t ready_to_send_data = 0;
 volatile uint8_t time_to_change_adc_ch = 0;
@@ -24,12 +26,18 @@ volatile uint8_t uart_busy = 0; // UART是否忙碌
 
 void init_frame_tail(void)
 {
-
     // 初始化帧尾
     points_data[TOTAL_POINTS] = 0xAA;     // 帧尾第一个字节
     points_data[TOTAL_POINTS + 1] = 0x55; // 帧尾第二个字节
     points_data[TOTAL_POINTS + 2] = 0x03; // 帧尾第三个字节
     points_data[TOTAL_POINTS + 3] = 0x99; // 帧尾第四个字节
+    
+    // 初始化帧尾
+    points_data_usb_tx[TOTAL_POINTS] = 0xAA;     // 帧尾第一个字节
+    points_data_usb_tx[TOTAL_POINTS + 1] = 0x55; // 帧尾第二个字节
+    points_data_usb_tx[TOTAL_POINTS + 2] = 0x03; // 帧尾第三个字节
+    points_data_usb_tx[TOTAL_POINTS + 3] = 0x99; // 帧尾第四个字节
+
 }
 
 const GPIO_Channel channels[64] = {
@@ -159,14 +167,10 @@ static void change_point_idx(void)
     {
         // test_counter++;
         // points_data[0] = test_counter;                          // 将第一个点设置为测试计数器
-        HAL_UART_Transmit_DMA(&huart1, points_data, FRAME_LEN); // 发送点数据
+        HAL_UART_Transmit_DMA(&huart1,  points_data, FRAME_LEN); // 发送点数据
         uart_busy = 1;
-        
-        // CDC_Transmit_HS(points_data, FRAME_LEN);
-        // HAL_GPIO_TogglePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin); // 切换测试端口
-        // HAL_GPIO_WritePin(TEST_PORT_GPIO_Port, TEST_PORT_Pin, GPIO_PIN_SET);
-
-        // delay_ms(10);
+        // time_to_send_data_through_usb = 1;
+        // useb_send_data();
 
         point_idx = 0;
     }
@@ -203,6 +207,8 @@ void adc_data_handler(void)
 
     // tx_buf[0] = adc_sum / ADC_BUFFER_SIZE; // 计算平均值
     points_data[point_idx] = adc_sum / ADC_BUFFER_SIZE;
+
+    // points_data_usb_tx[point_idx] = adc_sum / ADC_BUFFER_SIZE;
 }
 
 // void send_data_to_uart(void)
@@ -232,6 +238,22 @@ void main_task_adc(void)
         ;
 }
 
+void main_task_usb_send_test(void)
+{
+    if (g_device_state == 0)
+    {
+        return; /* USB未连接，跳过本次循环 */
+    }
+
+    static uint8_t counter = 0;
+    counter++;
+    points_data_usb_tx[0] = counter;
+
+    CDC_Transmit_HS(points_data_usb_tx, FRAME_LEN);
+
+    HAL_Delay(5);
+}
+
 void main_task(void)
 {
 
@@ -239,9 +261,9 @@ void main_task(void)
     {
         return;
     }
-    
+
     set_channel_pin(input_ch, GPIO_PIN_SET);
-    
+
     // 切换输入通道
     // turn_on_input_ch();
 
@@ -347,7 +369,7 @@ void main_task_only_ch0(void)
         adc_sum += adc_dma_buffer[i];
     }
 
-    memset(points_data, 0, TOTAL_POINTS);
+    memset((uint8_t *)points_data, 0, TOTAL_POINTS);
     // tx_buf[0] = adc_sum / ADC_BUFFER_SIZE; // 计算平均值
     points_data[0] = adc_sum / ADC_BUFFER_SIZE;
 

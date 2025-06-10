@@ -12,6 +12,7 @@
 #include "adc.h"
 #include "main.h"
 #include <string.h>
+#include "app_com.h"
 
 typedef struct
 {
@@ -33,5 +34,7 @@ typedef struct
 
 #define TEST_PORT_UP TEST_PORT_GPIO_Port->BSRR = TEST_PORT_Pin; // Set GPIO pin PB0 high
 #define TEST_PORT_DOWN TEST_PORT_GPIO_Port->BSRR |= TEST_PORT_Pin << 16;
+
+extern volatile uint8_t g_device_state; 
 
 #endif /* _USER_COMM_H_ */
